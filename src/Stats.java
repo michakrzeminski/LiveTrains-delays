@@ -79,13 +79,13 @@ public class Stats {
 		return stop_ids;
 	}
 	
-	private void calculateLateness(Integer stop_id, int lines, int brigade, String realTime) {
+	private void calculateLateness(Integer stop_id, int lines, String brigade, String realTime) {
 		Map<String, Integer> timetable = new HashMap<String, Integer>();
 		try{
 			PreparedStatement stmt = database.con.prepareStatement("SELECT timetable_id, time FROM timetable WHERE stop_id= ? AND line_no= ? AND brigade= ? ORDER BY time ASC");
 			stmt.setInt(1,stop_id);
 			stmt.setInt(2, lines);
-			stmt.setString(3, Integer.toString(brigade));
+			stmt.setString(3, brigade);
 			ResultSet rs = stmt.executeQuery();
 			
 			while(rs.next()) {
@@ -177,7 +177,7 @@ public class Stats {
 				counter++;
 				System.out.println(counter);
 				int lines = rs.getInt("line");
-				int brigade = rs.getInt("brigade");
+				String brigade = rs.getString("brigade");
 				String time = rs.getString("time_stamp");
 				
 				String train_lat = rs.getString("lat");
