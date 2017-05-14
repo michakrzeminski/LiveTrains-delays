@@ -101,9 +101,29 @@ public class Stats {
 				if(plannedTime != null) {
 					int[] lateness = timeBetween(plannedTime, realTime);
 					if(lateness[0] == 0 && lateness[1] < 30) {
+						int timetable_id = timetable.get(plannedTime);
 						//save to database : timetable_id, arrival_time, delay
+						PreparedStatement selectstmt = database.con.prepareStatement("SELECT delay FROM delay WHERE timetable_id= ? ");
+						selectstmt.setInt(1,timetable_id);
+						ResultSet result = selectstmt.executeQuery();
+						
+						while(result.next()) {
+							//timetable_id exists so update and make average
+							String old_delay = result.getString("delay");
+							String[] temp = old_delay.split(":");
+							int[] old = {Integer.parseInt(temp[0]),Integer.parseInt(temp[1]),Integer.parseInt(temp[2])};
+							int[] new_delay = makeavarage(old, lateness);
+							PreparedStatement update = database.con.prepareStatement("UPDATE delay SET delay = ? WHERE timetable_id = ?");
+							String new_late = new_delay[0] + ":" + new_delay[1] + ":" + new_delay[2];
+							update.setString(1, new_late);
+							update.setInt(2,timetable_id);
+							update.executeUpdate();
+							return;
+						}
+						
+						//timetable_id not existing so insert
 						PreparedStatement insert = database.con.prepareStatement("INSERT INTO delay VALUES ( ?, ?, ? )");
-						insert.setInt(1,timetable.get(plannedTime));
+						insert.setInt(1,timetable_id);
 						insert.setString(2, realTime);
 						String late = lateness[0] + ":" + lateness[1] + ":" + lateness[2];
 						insert.setString(3, late);
@@ -156,6 +176,19 @@ public class Stats {
 		return ret;
 	}
 	
+	private int[] makeavarage(int[] old_delay, int[] new_delay) {
+		int[] ret = new int[3];
+		int fir = old_delay[0]*3600 + old_delay[1]*60 + old_delay[2];
+		int sec = new_delay[0]*3600 + new_delay[1]*60 + new_delay[2];
+		int average = (fir + sec)/2;
+		ret[0] = (int) Math.floor(average / 3600);
+		average -= (ret[0] * 3600);
+		ret[1] = (int) Math.floor(average / 60);
+		average -= (ret[1] * 60);
+		ret[2] = average;
+		return ret;
+	}
+	
 	public static void main(String[] args) {
 		Stats stat = new Stats();
 		
@@ -168,8 +201,8 @@ public class Stats {
 		
 		try{
 			//select from timetable only for current date
-			PreparedStatement stmt = database.con.prepareStatement("SELECT DISTINCT time_stamp, lon, line, lat, brigade FROM train_history WHERE time_stamp LIKE ? ");
-			stmt.setString(1,currentDate+'%');
+			PreparedStatement stmt = database.con.prepareStatement("SELECT DISTINCT time_stamp, lon, line, lat, brigade FROM train_history");// WHERE time_stamp LIKE ? ");
+			//stmt.setString(1,currentDate+'%');
 			ResultSet rs = stmt.executeQuery();
 
 			int counter=0;
