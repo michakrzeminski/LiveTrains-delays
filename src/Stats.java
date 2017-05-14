@@ -201,8 +201,8 @@ public class Stats {
 		
 		try{
 			//select from timetable only for current date
-			PreparedStatement stmt = database.con.prepareStatement("SELECT DISTINCT time_stamp, lon, line, lat, brigade FROM train_history");// WHERE time_stamp LIKE ? ");
-			//stmt.setString(1,currentDate+'%');
+			PreparedStatement stmt = database.con.prepareStatement("SELECT DISTINCT time_stamp, lon, line, lat, brigade FROM train_history WHERE time_stamp LIKE ? ");
+			stmt.setString(1,currentDate+'%');
 			ResultSet rs = stmt.executeQuery();
 
 			int counter=0;
